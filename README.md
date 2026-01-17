@@ -1,4 +1,4 @@
-I needed read only mode so I added it. The other project was a zombie so decided to not create a pr. It's a simple fix.
+I needed read only mode so I added it. The other project was a zombie and I didn't have time so decided to not create a pr. It's a simple fix.
 
 <p align="center"><img src="static/logo-small.png" alt="MarkText" width="100" height="100"></p>
 
