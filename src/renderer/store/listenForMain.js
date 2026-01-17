@@ -28,6 +28,9 @@ const actions = {
     ipcRenderer.on('mt::show-command-palette', () => {
       bus.$emit('show-command-palette')
     })
+    ipcRenderer.on('mt::editor-toggle-read-mode', (e, data) => {
+      bus.$emit('toggle-read-mode', data.readMode)
+    })
   },
 
   LISTEN_FOR_SHOW_DIALOG ({ commit }) {

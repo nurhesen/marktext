@@ -22,6 +22,14 @@ export const typeMode = (win, type, item) => {
   }
 }
 
+export const readMode = (win, item) => {
+  if (!win) {
+    return
+  }
+  const { checked } = item
+  win.webContents.send('mt::editor-toggle-read-mode', { readMode: checked })
+}
+
 export const layout = (item, win, type, value) => {
   if (win && win.webContents) {
     win.webContents.send('mt::set-view-layout', { [type]: value || item.checked })
@@ -68,6 +76,9 @@ export const viewLayoutChanged = (applicationMenu, changes) => {
         break
       case 'focus':
         changeMenuByName(focusModeMenuItemId, value)
+        break
+      case 'readMode':
+        changeMenuByName('readModeMenuItem', value)
         break
     }
   }

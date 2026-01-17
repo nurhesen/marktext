@@ -73,7 +73,7 @@
 </template>
 
 <script>
-import { shell } from 'electron'
+import { shell, ipcRenderer } from 'electron'
 import path from 'path'
 import log from 'electron-log'
 import { mapState } from 'vuex'
@@ -105,6 +105,7 @@ import { moveImageToFolder, moveToRelativeFolder, uploadImage } from '@/util/fil
 import { guessClipboardFilePath } from '@/util/clipboard'
 import { getCssForOptions, getHtmlToc } from '@/util/pdf'
 import { addCommonStyle, setEditorWidth } from '@/util/theme'
+import { getReadModeForPath, setReadModeState } from '@/store/readModeState'
 
 import 'muya/themes/default.css'
 import '@/assets/themes/codemirror/one-dark.css'
@@ -191,6 +192,7 @@ export default {
       isShowClose: false,
       dialogTableVisible: false,
       imageViewerVisible: false,
+      readMode: false,
       tableChecker: {
         rows: 4,
         columns: 3
@@ -505,6 +507,16 @@ export default {
         this.scrollToCursor(0)
         // Hide float tools if needed.
         this.editor && this.editor.hideAllFloatTools()
+
+        // Update read mode based on file's persisted state
+        const pathname = value.pathname
+        if (pathname) {
+          const savedReadMode = getReadModeForPath(pathname)
+          this.setReadMode(savedReadMode)
+        } else {
+          // Untitled files: disable read mode
+          this.setReadMode(false)
+        }
       }
     },
 
@@ -652,6 +664,16 @@ export default {
       bus.$on('scroll-to-header', this.scrollToHeader)
       bus.$on('screenshot-captured', this.handleScreenShot)
       bus.$on('switch-spellchecker-language', this.switchSpellcheckLanguage)
+      bus.$on('toggle-read-mode', this.handleToggleReadMode)
+
+      // Initialize read mode from persisted state
+      const { pathname } = this.currentFile || {}
+      if (pathname) {
+        const savedReadMode = getReadModeForPath(pathname)
+        if (savedReadMode) {
+          this.setReadMode(savedReadMode)
+        }
+      }
 
       this.editor.on('change', changes => {
         // WORKAROUND: "id: 'muya'"
@@ -1267,6 +1289,31 @@ export default {
       this.editor.focus()
     },
 
+    handleToggleReadMode (readMode) {
+      const { pathname } = this.currentFile
+      this.setReadMode(readMode)
+
+      // Persist the state for the current file
+      if (pathname) {
+        setReadModeState(pathname, readMode)
+      }
+    },
+
+    setReadMode (readMode) {
+      this.readMode = readMode
+
+      if (this.editor) {
+        this.editor.setReadOnly(readMode)
+      }
+
+      // Emit event for source code editor
+      bus.$emit('read-mode-changed', readMode)
+
+      // Notify main process to sync menu checkbox
+      const { windowId } = global.marktext.env
+      ipcRenderer.send('mt::view-layout-changed', windowId, { readMode })
+    },
+
     handleScreenShot () {
       if (this.editor) {
         document.execCommand('paste')
@@ -1301,6 +1348,7 @@ export default {
     bus.$off('scroll-to-header', this.scrollToHeader)
     bus.$off('screenshot-captured', this.handleScreenShot)
     bus.$off('switch-spellchecker-language', this.switchSpellcheckLanguage)
+    bus.$off('toggle-read-mode', this.handleToggleReadMode)
 
     document.removeEventListener('keyup', this.keyup)
 

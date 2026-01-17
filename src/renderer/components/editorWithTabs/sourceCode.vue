@@ -13,6 +13,7 @@ import { mapState } from 'vuex'
 import { adjustCursor } from '../../util'
 import bus from '../../bus'
 import { oneDarkThemes, railscastsThemes } from '@/config'
+import { getReadModeForPath } from '@/store/readModeState'
 
 export default {
   props: {
@@ -38,7 +39,8 @@ export default {
       editor: null,
       commitTimer: null,
       viewDestroyed: false,
-      tabId: null
+      tabId: null,
+      readMode: false
     }
   },
 
@@ -94,6 +96,7 @@ export default {
       bus.$on('file-changed', this.handleFileChange)
       bus.$on('selectAll', this.handleSelectAll)
       bus.$on('image-action', this.handleImageAction)
+      bus.$on('read-mode-changed', this.handleReadModeChanged)
 
       setMode(editor, 'markdown')
       this.listenChange()
@@ -106,6 +109,16 @@ export default {
         setCursorAtLastLine(editor)
       }
       this.tabId = id
+
+      // Initialize read mode from persisted state
+      const { pathname } = this.currentTab || {}
+      if (pathname) {
+        const savedReadMode = getReadModeForPath(pathname)
+        if (savedReadMode) {
+          this.readMode = savedReadMode
+          editor.setOption('readOnly', savedReadMode)
+        }
+      }
     })
   },
   beforeDestroy () {
@@ -119,6 +132,7 @@ export default {
     bus.$off('file-changed', this.handleFileChange)
     bus.$off('selectAll', this.handleSelectAll)
     bus.$off('image-action', this.handleImageAction)
+    bus.$off('read-mode-changed', this.handleReadModeChanged)
 
     const { editor } = this
     const { cursor, markdown } = this.getMarkdownAndCursor(editor)
@@ -210,6 +224,17 @@ export default {
         setCursorAtLastLine(editor)
       }
       this.tabId = id
+
+      // Check read mode for new file
+      const { currentTab } = this
+      if (currentTab && currentTab.pathname) {
+        const savedReadMode = getReadModeForPath(currentTab.pathname)
+        this.readMode = savedReadMode
+        editor.setOption('readOnly', savedReadMode)
+      } else {
+        this.readMode = false
+        editor.setOption('readOnly', false)
+      }
     },
     // Get markdown and cursor from CodeMirror.
     getMarkdownAndCursor (cm) {
@@ -266,6 +291,13 @@ export default {
     handleInvalidateImageCache () {
       if (this.editor) {
         this.editor.invalidateImageCache()
+      }
+    },
+
+    handleReadModeChanged (readMode) {
+      this.readMode = readMode
+      if (this.editor) {
+        this.editor.setOption('readOnly', readMode)
       }
     }
   }

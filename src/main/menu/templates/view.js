@@ -52,6 +52,19 @@ export default function (keybindings) {
         actions.typeMode(browserWindow, 'focus', item)
       }
     }, {
+      id: 'readModeMenuItem',
+      label: 'Read Mode',
+      accelerator: keybindings.getAccelerator('view.read-mode'),
+      type: 'checkbox',
+      checked: false,
+      click (item, browserWindow, event) {
+        // if we call this function, the checked state is not set
+        if (!event) {
+          item.checked = !item.checked
+        }
+        actions.readMode(browserWindow, item)
+      }
+    }, {
       type: 'separator'
     }, {
       label: 'Show Sidebar',
