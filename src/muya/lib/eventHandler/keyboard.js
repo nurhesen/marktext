@@ -41,6 +41,12 @@ class Keyboard {
   recordIsComposed () {
     const { container, eventCenter, contentState } = this.muya
     const handler = event => {
+      // Block composition in read-only mode
+      if (this.muya.options.readOnly) {
+        event.preventDefault()
+        return
+      }
+
       if (event.type === 'compositionstart') {
         this.isComposed = true
       } else if (event.type === 'compositionend') {
@@ -97,6 +103,20 @@ class Keyboard {
   keydownBinding () {
     const { container, eventCenter, contentState } = this.muya
     const docHandler = event => {
+      // Block editing keys in read-only mode (allow navigation)
+      if (this.muya.options.readOnly) {
+        const isNavigationKey = [
+          EVENT_KEYS.ArrowUp,
+          EVENT_KEYS.ArrowDown,
+          EVENT_KEYS.ArrowLeft,
+          EVENT_KEYS.ArrowRight
+        ].includes(event.code)
+        if (!isNavigationKey) {
+          event.preventDefault()
+          return
+        }
+      }
+
       switch (event.code) {
         case EVENT_KEYS.Enter:
           return contentState.docEnterHandler(event)
@@ -129,6 +149,21 @@ class Keyboard {
     const handler = event => {
       if (event.metaKey || event.ctrlKey) {
         container.classList.add('ag-meta-or-ctrl')
+      }
+
+      // Block editing keys in read-only mode (allow navigation and Escape)
+      if (this.muya.options.readOnly) {
+        const isAllowedKey = [
+          EVENT_KEYS.ArrowUp,
+          EVENT_KEYS.ArrowDown,
+          EVENT_KEYS.ArrowLeft,
+          EVENT_KEYS.ArrowRight,
+          EVENT_KEYS.Escape
+        ].includes(event.key)
+        if (!isAllowedKey) {
+          event.preventDefault()
+          return
+        }
       }
 
       if (
@@ -199,6 +234,12 @@ class Keyboard {
   inputBinding () {
     const { container, eventCenter, contentState } = this.muya
     const inputHandler = event => {
+      // Block input in read-only mode
+      if (this.muya.options.readOnly) {
+        event.preventDefault()
+        return
+      }
+
       if (!this.isComposed) {
         contentState.inputHandler(event)
         this.muya.dispatchChange()

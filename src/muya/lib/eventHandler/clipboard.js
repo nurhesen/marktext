@@ -10,11 +10,21 @@ class Clipboard {
   listen () {
     const { container, eventCenter, contentState } = this.muya
     const docPasteHandler = event => {
+      // Block paste in read-only mode
+      if (this.muya.options.readOnly) {
+        event.preventDefault()
+        return
+      }
       contentState.docPasteHandler(event)
     }
     const docCopyCutHandler = event => {
       contentState.docCopyHandler(event)
       if (event.type === 'cut') {
+        // Block cut in read-only mode
+        if (this.muya.options.readOnly) {
+          event.preventDefault()
+          return
+        }
         // when user use `cut` function, the dom has been deleted by default.
         // But should update content state manually.
         contentState.docCutHandler(event)
@@ -23,6 +33,11 @@ class Clipboard {
     const copyCutHandler = event => {
       contentState.copyHandler(event, this._copyType, this._copyInfo)
       if (event.type === 'cut') {
+        // Block cut in read-only mode
+        if (this.muya.options.readOnly) {
+          event.preventDefault()
+          return
+        }
         // when user use `cut` function, the dom has been deleted by default.
         // But should update content state manually.
         contentState.cutHandler()
@@ -30,6 +45,11 @@ class Clipboard {
       this._copyType = 'normal'
     }
     const pasteHandler = event => {
+      // Block paste in read-only mode
+      if (this.muya.options.readOnly) {
+        event.preventDefault()
+        return
+      }
       contentState.pasteHandler(event, this._pasteType)
       this._pasteType = 'normal'
       this.muya.dispatchChange()

@@ -207,6 +207,12 @@ class Muya {
     this.options.focusMode = bool
   }
 
+  setReadOnly (readOnly) {
+    const { container } = this
+    container.setAttribute('contenteditable', !readOnly)
+    this.options.readOnly = readOnly
+  }
+
   setFont ({ fontSize, lineHeight }) {
     if (fontSize) {
       this.options.fontSize = parseInt(fontSize, 10)
